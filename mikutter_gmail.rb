@@ -6,7 +6,7 @@ module MikutterGmail
   class Mailer
     class << self
       def primary
-        @primary ||= ::Gmail.connect(*setting)
+        @primary ||= Gmail.connect!(*setting)
       end
 
       def setting
@@ -31,10 +31,10 @@ module MikutterGmail
 
   class Plugin < Mikutter::PluginBase
     def self.pattern
-      @pattern ||= /^@mail\n+
-                    to:(?<to>.*)\n+
-                    subject:(?<subject>.*)\n+
-                    (?<body>.*)$
+      @pattern ||= /^@mail\s+
+                    to:(.*)\n+
+                    subject:(.*)\n+
+                    (.*)$
                     /xu
     end
 
@@ -47,9 +47,12 @@ module MikutterGmail
 
     def filter_gui_postbox_post(box)
       buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
-      if buff.text =~ pattern
+      case buff.text
+      when pattern
         Mailer.new.send(*$~[1..3])
         buff.text = ""
+      when /^@mail\s/
+        buff.text = "test#{rand(1000)}"
       end
       [box]
     end
