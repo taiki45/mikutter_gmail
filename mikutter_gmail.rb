@@ -45,20 +45,24 @@ module MikutterGmail
     def run(plugin)
     end
 
+    def tell(msg)
+      ::Plugin.call(:update, nil, [::Message.new(message: msg, system: true)])
+    end
+
     def filter_gui_postbox_post(box)
       buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
 
       case buff.text
       when pattern
         Thread.new($~) do |matched|
-          ::Plugin.call(:update, nil, [::Message.new(message: "Sending mail...", system: true)])
+          tell "Sending mail..."
           result = Mailer.new.send(*matched[1..3])
           response = result ? "Sent successfully.\n\n#{result}" : "Failed to send mail.\ntext:\n#{matched}\nresult:\n#{result}"
-          ::Plugin.call(:update, nil, [::Message.new(message: response, system: true)])
+          tell response
         end
         buff.text = ""
       when /^@mail\s+(.*)/m
-        ::Plugin.call(:update, nil, [::Message.new(message: "フォーマットが違うかも..?\n#{$~}", system: true)])
+        tell "フォーマットが違うかも..?\n#{$~}"
         buff.text = ""
       end
       [box]
