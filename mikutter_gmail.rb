@@ -6,7 +6,7 @@ module MikutterGmail
   class Mailer
     class << self
       def primary
-        @primary ||= Gmail.connect!(*setting)
+        @primary ||= Gmail.connect(*setting)
       end
 
       def setting
@@ -34,7 +34,7 @@ module MikutterGmail
       @pattern ||= /^@mail\s+
                     to:(.*)\n+
                     subject:(.*)\n+
-                    (.*)$
+                    ((?:.|\n)*)$
                     /xu
     end
 
@@ -47,12 +47,19 @@ module MikutterGmail
 
     def filter_gui_postbox_post(box)
       buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
+
       case buff.text
       when pattern
-        Mailer.new.send(*$~[1..3])
+        Thread.new($~) do |matched|
+          ::Plugin.call(:update, nil, [::Message.new(message: "Sending mail...", system: true)])
+          result = Mailer.new.send(*matched[1..3])
+          response = result ? "Sent successfully.\n\n#{result}" : "Failed to send mail.\ntext:\n#{matched}\nresult:\n#{result}"
+          ::Plugin.call(:update, nil, [::Message.new(message: response, system: true)])
+        end
         buff.text = ""
-      when /^@mail\s/
-        buff.text = "test#{rand(1000)}"
+      when /^@mail\s+(.*)/m
+        ::Plugin.call(:update, nil, [::Message.new(message: "フォーマットが違うかも..?\n#{$~}", system: true)])
+        buff.text = ""
       end
       [box]
     end
