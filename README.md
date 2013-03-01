@@ -5,15 +5,14 @@ mikutter でメールを送ろう！
 `git clone` した後にこのディレクトリに`config.yaml`という名前で設定ファイルを置いてください。
 `sample.yaml` を参考に自分の Gmail アカウント名とパスワードをかいてください。
 
-`mikutter_plugin_base` と `gmail` という Gem が必要です。
+`gmail` という Gem が必要です。
 
 ```sh
-gem i mikutter_plugin_base gmail
+gem i gmail
 ```
 
 とするか、`your/mikutter/dir/Gemfile` に
 ```ruby
-gem 'mikutter_plugin_base'
 gem 'gmail'
 ```
 として`bundle` 後に `bundle exec ruby mikutter.rb` として起動してください。
@@ -34,7 +33,6 @@ subject:sample subject
 
 ## Plan
 * まずはエンコード関係でエラーでているのでその fix
-* 今はメールアドレスとパスワードをファイルに置いていてアレなので xauth つかいたいなあとか
 * unread メッセージも読めるといいなとか
 
 ## Contributing
