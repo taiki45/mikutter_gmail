@@ -39,7 +39,8 @@ class Mailer
 end
 
 Plugin.create :gmail do
-  pattern ||= /^@mail\s+
+  pattern = /
+    ^@mail\s+
     to:(.*)\n+
     subject:(.*)\n+
     ((?:.|\n)*)$
