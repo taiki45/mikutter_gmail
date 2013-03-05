@@ -75,8 +75,10 @@ module MikutterGmail
     end
 
     on_period do
-      count = mailer.unread_count
-      tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
+      Thread.new {
+        count = mailer.unread_count
+        tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
+      }
     end
   end
 end
