@@ -40,12 +40,14 @@ module MikutterGmail
   end
 
   Plugin.create :gmail do
-    pattern = /
+    valid = /
       ^@mail\s+
       to:(.*)\n+
       subject:(.*)\n+
       ((?:.|\n)*)$
     /xu
+
+    invalid = /^@mail\s+(.*)/m
 
     def tell(msg)
       ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
@@ -57,7 +59,7 @@ module MikutterGmail
       buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
 
       case buff.text
-      when pattern
+      when valid
         Thread.new($~) do |matched|
           tell "Sending mail..."
           result = mailer.send(*matched[1..3])
@@ -65,7 +67,7 @@ module MikutterGmail
           tell response
         end
         buff.text = ""
-      when /^@mail\s+(.*)/m
+      when invalid
         tell "フォーマットが違うかも..?\n#{$~}"
         buff.text = ""
       end
@@ -73,8 +75,10 @@ module MikutterGmail
     end
 
     on_period do
-      count = mailer.unread_count
-      tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
+      Thread.new {
+        count = mailer.unread_count
+        tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
+      }
     end
   end
 end
