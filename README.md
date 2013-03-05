@@ -1,5 +1,5 @@
 # Play with gmail via mikutter
-mikutter でメールを送ろう！
+mikutter で上司や教授にメールを送ろう！
 
 ## Setup
 `git clone` した後にこのディレクトリに`config.yaml`という名前で設定ファイルを置いてください。
