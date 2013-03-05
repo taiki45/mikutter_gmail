@@ -1,78 +1,80 @@
 # -*- coding: utf-8 -*-
 require 'gmail'
 
-class Mailer
-  class << self
+module MikutterGmail
+  class Mailer
+    class << self
+      def primary
+        @primary ||= Gmail.connect(*setting)
+      end
+
+      def setting
+        @setting ||= YAML.load(open(File.expand_path('../config.yaml', __FILE__))).values
+      end
+    end
+
+    def initialize
+      @last_unread_count = 0
+    end
+
     def primary
-      @primary ||= Gmail.connect(*setting)
+      self.class.primary
     end
 
-    def setting
-      @setting ||= YAML.load(open(File.expand_path('../config.yaml', __FILE__))).values
-    end
-  end
-
-  def initialize
-    @last_unread_count = 0
-  end
-
-  def primary
-    self.class.primary
-  end
-
-  def send(_to, _subject, _body)
-    primary.deliver do
-      to _to
-      subject _subject
-      text_part do
-        body _body
+    def send(_to, _subject, _body)
+      primary.deliver do
+        to _to
+        subject _subject
+        text_part do
+          body _body
+        end
       end
     end
-  end
 
-  def unread_count
-    count = primary.inbox.count(:unread)
-    change_countp = !(@last_unread_count == count)
-    @last_unread_count = count
-    change_countp ? count : 0
-  end
-end
-
-Plugin.create :gmail do
-  pattern = /
-    ^@mail\s+
-    to:(.*)\n+
-    subject:(.*)\n+
-    ((?:.|\n)*)$
-  /xu
-
-  def tell(msg)
-    ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
-  end
-
-  mailer = Mailer.new
-
-  filter_gui_postbox_post do |box|
-    buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
-
-    case buff.text
-    when pattern
-      Thread.new($~) do |matched|
-        tell "Sending mail..."
-        result = mailer.send(*matched[1..3])
-        response = result ? "Sent successfully.\n\n#{result}" : "Failed to send mail.\ntext:\n#{matched}\nresult:\n#{result}"
-        tell response
-      end
-      buff.text = ""
-    when /^@mail\s+(.*)/m
-      tell "フォーマットが違うかも..?\n#{$~}"
-      buff.text = ""
+    def unread_count
+      count = primary.inbox.count(:unread)
+      change_countp = !(@last_unread_count == count)
+      @last_unread_count = count
+      change_countp ? count : 0
     end
-    [box]
   end
 
-  on_period do
-    count = mailer.unread_count
-    tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
+  Plugin.create :gmail do
+    pattern = /
+      ^@mail\s+
+      to:(.*)\n+
+      subject:(.*)\n+
+      ((?:.|\n)*)$
+    /xu
+
+    def tell(msg)
+      ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
+    end
+
+    mailer = Mailer.new
+
+    filter_gui_postbox_post do |box|
+      buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
+
+      case buff.text
+      when pattern
+        Thread.new($~) do |matched|
+          tell "Sending mail..."
+          result = mailer.send(*matched[1..3])
+          response = result ? "Sent successfully.\n\n#{result}" : "Failed to send mail.\ntext:\n#{matched}\nresult:\n#{result}"
+          tell response
+        end
+        buff.text = ""
+      when /^@mail\s+(.*)/m
+        tell "フォーマットが違うかも..?\n#{$~}"
+        buff.text = ""
+      end
+      [box]
+    end
+
+    on_period do
+      count = mailer.unread_count
+      tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
+    end
   end
 end
