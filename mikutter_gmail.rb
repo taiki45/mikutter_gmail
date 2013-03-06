@@ -61,9 +61,9 @@ module MikutterGmail
       case buff.text
       when valid
         Thread.new($~) do |matched|
-          tell "Sending mail..."
+          tell "送信中です☆"
           result = mailer.send(*matched[1..3])
-          response = result ? "Sent successfully.\n\n#{result}" : "Failed to send mail.\ntext:\n#{matched}\nresult:\n#{result}"
+          response = result ? "上手く送れたみたいだよ☆\n\n#{result}" : "失敗したみたい…\ntext:\n#{matched}\nresult:\n#{result}"
           tell response
         end
         buff.text = ""
