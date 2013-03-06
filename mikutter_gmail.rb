@@ -9,7 +9,7 @@ module MikutterGmail
       end
 
       def setting
-        @setting ||= YAML.load(open(File.expand_path('../config.yaml', __FILE__))).values
+        @setting ||= YAML.load_file(File.expand_path('../config.yaml', __FILE__)).values
       end
     end
 
@@ -40,20 +40,20 @@ module MikutterGmail
   end
 
   Plugin.create :gmail do
+    def tell(msg)
+      ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
+    end
+
     valid = /
       ^@mail\s+
       to:(.*)\n+
       subject:(.*)\n+
       ((?:.|\n)*)$
     /xu
-
     invalid = /^@mail\s+(.*)/m
 
-    def tell(msg)
-      ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
-    end
-
     mailer = Mailer.new
+    at_exit { mailer.primary.logout }
 
     filter_gui_postbox_post do |box|
       buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
@@ -61,9 +61,9 @@ module MikutterGmail
       case buff.text
       when valid
         Thread.new($~) do |matched|
-          tell "Sending mail..."
+          tell "送信中です☆"
           result = mailer.send(*matched[1..3])
-          response = result ? "Sent successfully.\n\n#{result}" : "Failed to send mail.\ntext:\n#{matched}\nresult:\n#{result}"
+          response = result ? "上手く送れたみたいだよ☆\n\n#{result}" : "失敗したみたい…\ntext:\n#{matched}\nresult:\n#{result}"
           tell response
         end
         buff.text = ""
@@ -75,10 +75,10 @@ module MikutterGmail
     end
 
     on_period do
-      Thread.new {
+      Thread.new do
         count = mailer.unread_count
         tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
-      }
+      end
     end
   end
 end
