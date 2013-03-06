@@ -40,19 +40,17 @@ module MikutterGmail
   end
 
   Plugin.create :gmail do
+    def tell(msg)
+      ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
+    end
+
     valid = /
       ^@mail\s+
       to:(.*)\n+
       subject:(.*)\n+
       ((?:.|\n)*)$
     /xu
-
     invalid = /^@mail\s+(.*)/m
-
-    def tell(msg)
-      ::Plugin.call(:update, nil, [Message.new(message: msg, system: true)])
-    end
-
     mailer = Mailer.new
 
     filter_gui_postbox_post do |box|
@@ -75,10 +73,10 @@ module MikutterGmail
     end
 
     on_period do
-      Thread.new {
+      Thread.new do
         count = mailer.unread_count
         tell "未読メールがあるよー☆ 未読数#{count}" if count > 0
-      }
+      end
     end
   end
 end
