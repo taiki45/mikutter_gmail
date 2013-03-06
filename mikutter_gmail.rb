@@ -51,7 +51,9 @@ module MikutterGmail
       ((?:.|\n)*)$
     /xu
     invalid = /^@mail\s+(.*)/m
+
     mailer = Mailer.new
+    at_exit { mailer.primary.logout }
 
     filter_gui_postbox_post do |box|
       buff = ::Plugin.create(:gtk).widgetof(box).widget_post.buffer
