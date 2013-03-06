@@ -9,7 +9,7 @@ module MikutterGmail
       end
 
       def setting
-        @setting ||= YAML.load(open(File.expand_path('../config.yaml', __FILE__))).values
+        @setting ||= YAML.load_file(File.expand_path('../config.yaml', __FILE__)).values
       end
     end
 
